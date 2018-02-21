@@ -1,0 +1,74 @@
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 00ed11d24a289e9cb1a0ed791ca834c2da979db11a4784b2b288542b1d983e2b
+
+name:           haskell-alfred-github
+version:        0.1.0.0
+description:    Please see the README on Github at <https://github.com/githubuser/haskell-alfred-github#readme>
+homepage:       https://github.com/githubuser/haskell-alfred-github#readme
+bug-reports:    https://github.com/githubuser/haskell-alfred-github/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2018 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/haskell-alfred-github
+
+library
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , ConfigFile 
+    , wreq
+    , lens
+    , aeson
+    , lens-aeson
+    , bytestring
+    , text
+    , mtl
+    , raw-strings-qq
+  exposed-modules:
+      Lib
+    , Git
+    , GitConfig  
+  other-modules:
+      Paths_haskell_alfred_github
+  default-language: Haskell2010
+
+executable haskell-alfred-github-exe
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , haskell-alfred-github
+    , mtl
+  other-modules:
+      Paths_haskell_alfred_github
+  default-language: Haskell2010
+
+test-suite haskell-alfred-github-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , haskell-alfred-github
+  other-modules:
+      Paths_haskell_alfred_github
+  default-language: Haskell2010
