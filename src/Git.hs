@@ -39,7 +39,7 @@ getRepos' url token cursor accu = do
 getBody :: Maybe String -> String
 getBody maybeCursor =
   [r|
-     {"query": "query { viewer { name repositories(first:100 |] ++ 
+     {"query": "query { viewer { name repositories(first:100 affiliations: [OWNER,COLLABORATOR,ORGANIZATION_MEMBER] |] ++ 
      getCursorQuery maybeCursor ++ 
   [r|) { nodes { name url } totalCount pageInfo { endCursor hasNextPage }}}}"}
 |]
