@@ -2,6 +2,8 @@ module Main where
 
 import qualified GitConfig as GC
 import qualified Git as G
+import qualified Args
+import qualified Dispatch
 
 import Control.Monad.Except
 import System.Environment
@@ -9,19 +11,18 @@ import Control.Exception
 
 main :: IO ()
 main = do
-  out <- catchAny run
+  out  <- catchAny run
   putStrLn out
 
 run :: IO String
 run = do
-  file   <- getConfFile
-  config <- GC.readConfig file
-  G.getReposJSON config
+  args   <- Args.getArgs
+  config <- GC.readConfig $ getConfFile args
+  Dispatch.dispatch args config
 
-getConfFile :: IO String
-getConfFile = do
-  args <- getArgs
-  liftMaybe . headOption $ args
+getConfFile :: Args.ArgsMode -> String
+getConfFile (Args.Store cf) = cf
+getConfFile (Args.Get cf) = cf
 
 headOption :: [a] -> Maybe a
 headOption [] = Nothing
