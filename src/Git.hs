@@ -14,34 +14,45 @@ import Data.Text.Encoding
 import Data.Text
 import Text.RawString.QQ
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Lazy.Char8 as C
 import qualified Data.Text as T
 import qualified Data.Maybe as DM
 
-getReposJSON :: GC.GitConfig -> IO String
+getReposJSON :: GC.GitConfig -> IO (String, Int)
 getReposJSON config = do
   repos <- getRepos' (GC.buildUrl config) (GC.token config) Nothing []
-  return $ getJson $ Alfreds $ createAlfred repos
+  return (getJson $ Alfreds $ createAlfred repos, Prelude.length repos)
 
 getJson :: ToJSON a => a -> String
 getJson d = unpack $ decodeUtf8 $ BSL.toStrict (encode d)
 
 getRepos' :: String -> String -> Maybe String -> [Repo] -> IO [Repo]
 getRepos' url token cursor accu = do
-  let opts = defaults & header "Authorization" .~ [BS8.pack $ " token " ++ token]
+  let opts = defaults & header "Authorization" .~ [BS8.pack $ "Bearer " ++ token]
       withContentType = opts & header "Content-Type" .~ [BS8.pack "application/json"]
-  response <- postWith withContentType (url ++ "/graphql") (BS8.pack $ getBody cursor)
-  let repos = getReposJson response 
+      graphqlBody = getBodySearch cursor
+--  putStrLn(graphqlBody)
+  response <- postWith withContentType (url ++ "/api/graphql") (BS8.pack graphqlBody)
+--  putStrLn (C.unpack (response ^. responseBody))
+  let repos = getReposJsonSearch response 
   return $ show $ getCursor response
   case getCursor response of Nothing -> return $ accu ++ repos
                              c       -> getRepos' url token c $ accu ++ repos
-                           
 
 getBody :: Maybe String -> String
 getBody maybeCursor =
   [r|
-     {"query": "query { viewer { name repositories(first:100 affiliations: [OWNER,COLLABORATOR,ORGANIZATION_MEMBER] |] ++ 
+     {"query": "query { viewer { name repositories(first:100 affiliations: [OWNER,COLLABORATOR,ORGANIZATION_MEMBER] ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER] |] ++ 
      getCursorQuery maybeCursor ++ 
   [r|) { nodes { name url } totalCount pageInfo { endCursor hasNextPage }}}}"}
+|]
+
+getBodySearch :: Maybe String -> String
+getBodySearch maybeCursor =
+  [r|
+     {"query": "query { search(query: \"org:baseball-data\", type: REPOSITORY, first: 100 |] ++
+     getCursorQuery maybeCursor ++ 
+  [r|) { repositoryCount edges { node { ... on Repository { name url } } } pageInfo { endCursor hasNextPage }}}"}
 |]
 
 getCursorQuery :: Maybe String -> String
@@ -55,11 +66,17 @@ getCursor response =
 getReposJson :: Response BSL.ByteString -> [Repo]
 getReposJson response = response ^. responseBody . key "data" . key "viewer" . key "repositories" . key "nodes" . _JSON
 
+getReposJsonSearch :: Response BSL.ByteString -> [Repo]
+getReposJsonSearch response = fmap (\rn -> node rn) (getRepoNodesJson response)
+
+getRepoNodesJson :: Response BSL.ByteString -> [RepoNode]
+getRepoNodesJson response = response ^. responseBody . key "data" . key "search" . key "edges" . _JSON
+
 hasNext :: Response BSL.ByteString -> Bool
-hasNext response = DM.fromMaybe False $ response ^? responseBody . key "data" . key "viewer" . key "repositories" . key "pageInfo" . key "hasNextPage" . _Bool
+hasNext response = DM.fromMaybe False $ response ^? responseBody . key "data" . key "search" . key "pageInfo" . key "hasNextPage" . _Bool
 
 endCursor :: Response BSL.ByteString -> String
-endCursor response = T.unpack $ response ^. responseBody . key "data" . key "viewer" . key "repositories" . key "pageInfo" . key "endCursor" . _String
+endCursor response = T.unpack $ response ^. responseBody . key "data" . key "search" . key "pageInfo" . key "endCursor" . _String
 
 
 createAlfred :: [Repo] -> [Alfred]
@@ -72,6 +89,13 @@ mapToAlfred repos = Alfred {
   arg = url repos,
   icon = Icon { path = "" }
 }
+
+data RepoNode = RepoNode {
+  node :: Repo
+} deriving (Generic, Show)
+
+instance FromJSON RepoNode
+instance ToJSON RepoNode
 
 data Repo = Repo {
   name :: String,

@@ -29,3 +29,47 @@ Get caches repos from disk
 ```
 ./haskell-alfred-github -m get ~/.path-to-config-file
 ```
+
+
+The GraphQL query (this doesn't seem to work...)
+```
+query {
+  viewer {
+    name repositories(first:100 affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER] ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {
+      nodes {
+        name url
+      }
+    }
+  }
+}
+```
+but this does 
+```
+{
+  search(query: "org:baseball-data", type: REPOSITORY, first: 100) {
+    repositoryCount
+    edges {
+      node {
+        ... on Repository {
+          name url
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      startCursor
+    }
+  }
+}    
+
+```
+
+
+```
+curl -H "Authorization: Bearer 9061be5c91656afc9886b6c6059cd7c06e502177" -X POST -d "{\"query\": \"query { viewer { name repositories(first:100 affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER] ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) { nodes { name url }}}}\" }" https://github.mlbam.net/api/graphql
+```
+
+```
+stack build --file-watch
+stack exec haskell-alfred-github -- store -c ~/.alfred-github.conf
+```

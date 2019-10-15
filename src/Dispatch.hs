@@ -10,9 +10,9 @@ dispatch (Args.Get _)   = getCache
 
 storeResults :: GC.GitConfig -> IO String
 storeResults config = do
-  json <- G.getReposJSON config
-  _    <- writeFile (GC.cacheFile config) json
-  return "Update Successful"
+  (json, count) <- G.getReposJSON config
+  _             <- writeFile (GC.cacheFile config) json
+  return $ "Updated " ++ (show count) ++ " repos successfully"
 
 getCache :: GC.GitConfig -> IO String
 getCache config = readFile (GC.cacheFile config)
