@@ -20,24 +20,24 @@ import qualified Data.Maybe as DM
 
 getReposJSON :: GC.GitConfig -> IO (String, Int)
 getReposJSON config = do
-  repos <- getRepos' (GC.buildUrl config) (GC.token config) Nothing []
+  repos <- getRepos' (GC.org config) (GC.buildUrl config) (GC.token config) Nothing []
   return (getJson $ Alfreds $ createAlfred repos, Prelude.length repos)
 
 getJson :: ToJSON a => a -> String
 getJson d = unpack $ decodeUtf8 $ BSL.toStrict (encode d)
 
-getRepos' :: String -> String -> Maybe String -> [Repo] -> IO [Repo]
-getRepos' url token cursor accu = do
+getRepos' :: String -> String -> String -> Maybe String -> [Repo] -> IO [Repo]
+getRepos' org url token cursor accu = do
   let opts = defaults & header "Authorization" .~ [BS8.pack $ "Bearer " ++ token]
       withContentType = opts & header "Content-Type" .~ [BS8.pack "application/json"]
-      graphqlBody = getBodySearch cursor
+      graphqlBody = getBodySearch org cursor
 --  putStrLn(graphqlBody)
   response <- postWith withContentType (url ++ "/api/graphql") (BS8.pack graphqlBody)
 --  putStrLn (C.unpack (response ^. responseBody))
   let repos = getReposJsonSearch response 
   return $ show $ getCursor response
   case getCursor response of Nothing -> return $ accu ++ repos
-                             c       -> getRepos' url token c $ accu ++ repos
+                             c       -> getRepos' org url token c $ accu ++ repos
 
 getBody :: Maybe String -> String
 getBody maybeCursor =
@@ -47,10 +47,10 @@ getBody maybeCursor =
   [r|) { nodes { name url } totalCount pageInfo { endCursor hasNextPage }}}}"}
 |]
 
-getBodySearch :: Maybe String -> String
-getBodySearch maybeCursor =
+getBodySearch :: String -> Maybe String -> String
+getBodySearch org maybeCursor =
   [r|
-     {"query": "query { search(query: \"org:baseball-data\", type: REPOSITORY, first: 100 |] ++
+     {"query": "query { search(query: \"org:" ++ org ++ "\", type: REPOSITORY, first: 100 |] ++
      getCursorQuery maybeCursor ++ 
   [r|) { repositoryCount edges { node { ... on Repository { name url } } } pageInfo { endCursor hasNextPage }}}"}
 |]

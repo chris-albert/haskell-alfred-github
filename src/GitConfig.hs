@@ -7,7 +7,8 @@ data GitConfig = GitConfig {
   protocol  :: String,
   host      :: String,
   token     :: String,
-  cacheFile :: String
+  cacheFile :: String,
+  org       :: String
 } deriving Show
 
 readConfig :: String -> IO GitConfig
@@ -21,7 +22,8 @@ readConfig fileName =
        h  <- CF.get cp "DEFAULT" "host"      :: ExceptT CF.CPError IO String
        t  <- CF.get cp "DEFAULT" "token"     :: ExceptT CF.CPError IO String
        f  <- CF.get cp "DEFAULT" "cachefile" :: ExceptT CF.CPError IO String
-       let jc = GitConfig p h t f
+       o  <- CF.get cp "DEFAULT" "org" :: ExceptT CF.CPError IO String
+       let jc = GitConfig p h t f o
        return jc
     eitherIO ioConfig
 

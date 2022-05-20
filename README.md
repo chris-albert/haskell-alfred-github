@@ -18,6 +18,7 @@ protocol = https
 host = api.github.com
 token = your-github-token-here
 cachefile = file-to-put-your-github-repos-cache (~ is not supported here, must be absolute path)
+org = github organization
 ```
 
 Save repos to disk
@@ -64,10 +65,6 @@ but this does
 
 ```
 
-
-```
-curl -H "Authorization: Bearer 9061be5c91656afc9886b6c6059cd7c06e502177" -X POST -d "{\"query\": \"query { viewer { name repositories(first:100 affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER] ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) { nodes { name url }}}}\" }" https://github.mlbam.net/api/graphql
-```
 
 ```
 stack build --file-watch
